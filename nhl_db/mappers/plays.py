@@ -2,18 +2,32 @@ from typing import Any, Dict, List, Optional, Tuple
 
 
 def map_play(game_id: int, p: Dict[str, Any]) -> Tuple[Any, ...]:
-    play_id = game_id + p.get("eventId", 0)
+    play_id = str(game_id) + str(p.get("eventId", 0))
+    play_id = int(play_id)
     idx = p.get("sortOrder", 0)
 
     period = None
     time_str = None
     time_remaining = None
-    seconds_elapsed = None
     pd = p.get("periodDescriptor") or {}
     if isinstance(pd, dict):
         period = pd.get("number")
         time_remaining = pd.get("timeRemaining")
         time_str = pd.get("timeElapsed") or time_remaining
+    
+    # Fallback to timeInPeriod if periodDescriptor doesn't have time data
+    if not time_str:
+        time_str = p.get("timeInPeriod")
+    if not time_remaining:
+        time_remaining = p.get("timeRemaining")
+    
+    # Provide defaults for NOT NULL fields
+    if period is None:
+        period = 0
+    if not time_str:
+        time_str = "00:00"
+    if not time_remaining:
+        time_remaining = "00:00"
 
     team_id = None
     if isinstance(p.get("team"), dict):
