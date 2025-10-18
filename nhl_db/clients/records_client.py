@@ -21,3 +21,12 @@ def fetch_franchises(session: Optional[requests.Session] = None) -> List[Dict[st
     return data.get("data", [])
 
 
+
+def fetch_players_by_team(team_id: int, session: Optional[requests.Session] = None) -> List[Dict[str, Any]]:
+    session = session or requests.Session()
+    url = f"{RECORDS_BASE}/player/byTeam/{team_id}"
+    resp = session.get(url, timeout=30)
+    resp.raise_for_status()
+    data = resp.json() or {}
+    return data.get("data", [])
+

@@ -8,6 +8,11 @@ def to_player_rows(roster: List[Dict[str, Any]], team_id: int) -> List[Tuple[Any
             pid = int(p.get("id"))
         except Exception:
             continue
+        # Prefer per-player team id if present in the payload (e.g., Records API)
+        try:
+            player_team_id = int(p.get("playerTeamId")) if p.get("playerTeamId") is not None else team_id
+        except Exception:
+            player_team_id = team_id
         fn = p.get("firstName")
         if isinstance(fn, dict):
             first = fn.get("default") or next(iter(fn.values()), None)
@@ -32,7 +37,7 @@ def to_player_rows(roster: List[Dict[str, Any]], team_id: int) -> List[Tuple[Any
         home_country = p.get("birthCountry")
         rows.append((
             pid,
-            team_id,
+            player_team_id,
             first or "",
             last or "",
             number,

@@ -31,7 +31,7 @@ def sync_players_roster(season: str, teams_filter: Optional[str] = None) -> int:
     for team_id, tri in team_rows:
         if allow and tri.upper() not in allow:
             continue
-        roster = fetch_roster(tri, season)
+        roster = fetch_roster(tri, season, team_id)
         rows = to_player_rows(roster, team_id)
         upsert_players(rows)
         total += len(rows)
