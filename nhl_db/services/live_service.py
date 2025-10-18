@@ -50,7 +50,7 @@ def _list_live_games_today(session: Optional[requests.Session] = None) -> List[i
     ids: List[int] = []
     for g in games:
         try:
-            if str(g.get("gameState") or "").upper() == "LIVE":
+            if str(g.get("gameState") or "").upper() in ["LIVE", "CRIT"]:
                 ids.append(int(g.get("id")))
         except Exception:
             continue
