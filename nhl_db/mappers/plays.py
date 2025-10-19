@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 
 def map_play(game_id: int, p: Dict[str, Any]) -> Tuple[Any, ...]:
-    play_id = str(game_id) + str(p.get("eventId", 0))
-    play_id = int(play_id)
+    pid = str(game_id) + str(p.get("eventId", 0))
+    play_id = int(pid)
     idx = p.get("sortOrder", 0)
 
     period = None
@@ -40,11 +40,11 @@ def map_play(game_id: int, p: Dict[str, Any]) -> Tuple[Any, ...]:
         team_id = None
 
     details = p.get("details") or {}
-    primary_id = details.get("shootingPlayerId") or details.get("scoringPlayerId") or details.get("hittingPlayerId") or details.get("winningPlayerId")
-    losing_id = details.get("losingPlayerId")
-    sec_ids = details.get("assistingPlayerIds") or []
-    secondary_id = sec_ids[0] if len(sec_ids) > 0 else None
-    tertiary_id = sec_ids[1] if len(sec_ids) > 1 else None
+    primary_id = details.get("playerId") or details.get("shootingPlayerId") or details.get("scoringPlayerId") or details.get("hittingPlayerId") or details.get("winningPlayerId") or details.get("committedByPlayerId")
+    opposing_player_id = details.get("losingPlayerId") or details.get("hitteePlayerId") or details.get("goalieInNetId") or details.get("blockingPlayerId") or details.get("drawnByPlayerId")
+
+    secondary_id = details.get("assist1PlayerId")
+    tertiary_id = details.get("assist2PlayerId")
 
     x = details.get("xCoord")
     y = details.get("yCoord")
@@ -57,7 +57,7 @@ def map_play(game_id: int, p: Dict[str, Any]) -> Tuple[Any, ...]:
         int(idx),
         team_id,
         primary_id,
-        losing_id,
+        opposing_player_id,
         secondary_id,
         tertiary_id,
         period,
