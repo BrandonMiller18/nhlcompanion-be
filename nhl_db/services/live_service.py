@@ -1,7 +1,10 @@
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from datetime import datetime
+import logging
 import requests
+
+logger = logging.getLogger(__name__)
 
 from ..clients.nhl_web_client import (
     fetch_game_boxscore,
@@ -66,7 +69,7 @@ def _list_live_games_today(session: Optional[requests.Session] = None) -> List[i
 def watch_live_games(poll_seconds: int = 5) -> None:
     session = get_configured_session()
     i = 0
-    SESSION_REFRESH_INTERVAL = 50  # Recreate session every 100 iterations
+    SESSION_REFRESH_INTERVAL = 50  # Recreate session every N iterations
     
     while True:
         # Periodically refresh the session to prevent long-lived connection issues
@@ -95,19 +98,23 @@ def watch_live_games(poll_seconds: int = 5) -> None:
                         rows = [map_play(game_id, p) for p in plays]
                         upsert_plays_with_conn(conn, rows)
                     except requests.exceptions.RequestException as e:
+                        logger.error(f"Request error for game {game_id}: {e}", exc_info=True)
                         print(f"Request error for game {game_id}: {e}")
                         print("Continuing to next game...")
                         continue
                     except Exception as e:
+                        logger.error(f"Unexpected error for game {game_id}: {e}", exc_info=True)
                         print(f"Unexpected error for game {game_id}: {e}")
                         print("Continuing to next game...")
                         continue
             finally:
                 conn.close()
         except requests.exceptions.RequestException as e:
+            logger.error(f"Request error while fetching live games: {e}", exc_info=True)
             print(f"Request error while fetching live games: {e}")
             print("Retrying in next iteration...")
         except Exception as e:
+            logger.error(f"Unexpected error in watch loop: {e}", exc_info=True)
             print(f"Unexpected error in watch loop: {e}")
             print("Retrying in next iteration...")
 

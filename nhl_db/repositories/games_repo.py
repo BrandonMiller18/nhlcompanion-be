@@ -1,6 +1,9 @@
 from typing import Any, List, Optional, Tuple
+import logging
 
 from ..db import get_db_connection
+
+logger = logging.getLogger(__name__)
 
 
 def upsert_games(rows: List[Tuple[Any, ...]]) -> None:
@@ -18,8 +21,13 @@ def upsert_games(rows: List[Tuple[Any, ...]]) -> None:
     conn = get_db_connection()
     try:
         cur = conn.cursor()
-        cur.executemany(sql, rows)
-        cur.close()
+        try:
+            cur.executemany(sql, rows)
+        except Exception as e:
+            logger.error(f"Database error upserting {len(rows)} games: {e}", exc_info=True)
+            raise
+        finally:
+            cur.close()
     finally:
         conn.close()
 
@@ -32,20 +40,25 @@ def update_game_fields(game_id: int, game_state: Optional[str], period: Optional
     conn = get_db_connection()
     try:
         cur = conn.cursor()
-        cur.execute(
-            sql,
-            (
-                game_state,
-                period,
-                clock,
-                home_score,
-                away_score,
-                home_sog,
-                away_sog,
-                game_id,
-            ),
-        )
-        cur.close()
+        try:
+            cur.execute(
+                sql,
+                (
+                    game_state,
+                    period,
+                    clock,
+                    home_score,
+                    away_score,
+                    home_sog,
+                    away_sog,
+                    game_id,
+                ),
+            )
+        except Exception as e:
+            logger.error(f"Database error updating game fields for game_id={game_id}: {e}", exc_info=True)
+            raise
+        finally:
+            cur.close()
     finally:
         conn.close()
 
@@ -63,7 +76,11 @@ def upsert_games_with_conn(conn, rows: List[Tuple[Any, ...]]) -> None:  # type: 
     )
     cur = conn.cursor()
     try:
-        cur.executemany(sql, rows)
+        try:
+            cur.executemany(sql, rows)
+        except Exception as e:
+            logger.error(f"Database error upserting {len(rows)} games with connection: {e}", exc_info=True)
+            raise
     finally:
         cur.close()
 
@@ -75,19 +92,23 @@ def update_game_fields_with_conn(conn, game_id: int, game_state: Optional[str], 
     )
     cur = conn.cursor()
     try:
-        cur.execute(
-            sql,
-            (
-                game_state,
-                period,
-                clock,
-                home_score,
-                away_score,
-                home_sog,
-                away_sog,
-                game_id,
-            ),
-        )
+        try:
+            cur.execute(
+                sql,
+                (
+                    game_state,
+                    period,
+                    clock,
+                    home_score,
+                    away_score,
+                    home_sog,
+                    away_sog,
+                    game_id,
+                ),
+            )
+        except Exception as e:
+            logger.error(f"Database error updating game fields with connection for game_id={game_id}: {e}", exc_info=True)
+            raise
     finally:
         cur.close()
 
