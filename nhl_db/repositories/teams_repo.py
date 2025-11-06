@@ -1,6 +1,9 @@
 from typing import Any, List, Tuple
+import logging
 
 from ..db import get_db_connection
+
+logger = logging.getLogger(__name__)
 
 
 def upsert_teams(rows: List[Tuple[Any, ...]]) -> None:
@@ -15,8 +18,13 @@ def upsert_teams(rows: List[Tuple[Any, ...]]) -> None:
     conn = get_db_connection()
     try:
         cur = conn.cursor()
-        cur.executemany(sql, rows)
-        cur.close()
+        try:
+            cur.executemany(sql, rows)
+        except Exception as e:
+            logger.error(f"Database error upserting {len(rows)} teams: {e}", exc_info=True)
+            raise
+        finally:
+            cur.close()
     finally:
         conn.close()
 

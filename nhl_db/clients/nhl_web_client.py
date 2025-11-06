@@ -1,11 +1,14 @@
 from typing import Any, Dict, List, Optional
 
+import logging
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from .records_client import fetch_players_by_team
 
 from ..config import NHL_WEB_BASE
+
+logger = logging.getLogger(__name__)
 
 
 def get_configured_session() -> requests.Session:
@@ -44,9 +47,13 @@ def fetch_roster(tricode: str, season: str, team_id: int, session: Optional[requ
     tri = (tricode or "").lower()
     # NHL Web roster (primary source)
     url = f"{NHL_WEB_BASE}/roster/{tri}/{season}"
-    resp = session.get(url, timeout=30)
-    resp.raise_for_status()
-    data = resp.json() or {}
+    try:
+        resp = session.get(url, timeout=30)
+        resp.raise_for_status()
+        data = resp.json() or {}
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching roster for {tricode} (team_id={team_id}), URL={url}: {e}", exc_info=True)
+        raise
     web_players: List[Dict[str, Any]] = []
     for group in ("forwards", "defensemen", "goalies"):
         web_players.extend(data.get(group, []) or [])
@@ -101,9 +108,13 @@ def fetch_schedule_for_date(date_str: str, session: Optional[requests.Session] =
     print(f"Fetching schedule for date: {date_str}...")
     session = session or get_configured_session()
     url = f"{NHL_WEB_BASE}/schedule/{date_str}"
-    resp = session.get(url, timeout=30)
-    resp.raise_for_status()
-    data = resp.json() or {}
+    try:
+        resp = session.get(url, timeout=30)
+        resp.raise_for_status()
+        data = resp.json() or {}
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching schedule for date {date_str}, URL={url}: {e}", exc_info=True)
+        raise
     games: List[Dict[str, Any]] = []
     for day in data.get("gameWeek", []) or []:
         for g in day.get("games", []) or []:
@@ -114,24 +125,36 @@ def fetch_schedule_for_date(date_str: str, session: Optional[requests.Session] =
 def fetch_game_landing(game_id: int, session: Optional[requests.Session] = None) -> Dict[str, Any]:
     session = session or get_configured_session()
     url = f"{NHL_WEB_BASE}/gamecenter/{game_id}/landing"
-    resp = session.get(url, timeout=30)
-    resp.raise_for_status()
-    return resp.json() or {}
+    try:
+        resp = session.get(url, timeout=30)
+        resp.raise_for_status()
+        return resp.json() or {}
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching game landing for game_id={game_id}, URL={url}: {e}", exc_info=True)
+        raise
 
 
 def fetch_game_boxscore(game_id: int, session: Optional[requests.Session] = None) -> Dict[str, Any]:
     session = session or get_configured_session()
     url = f"{NHL_WEB_BASE}/gamecenter/{game_id}/boxscore"
-    resp = session.get(url, timeout=30)
-    resp.raise_for_status()
-    return resp.json() or {}
+    try:
+        resp = session.get(url, timeout=30)
+        resp.raise_for_status()
+        return resp.json() or {}
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching game boxscore for game_id={game_id}, URL={url}: {e}", exc_info=True)
+        raise
 
 
 def fetch_game_pbp(game_id: int, session: Optional[requests.Session] = None) -> Dict[str, Any]:
     session = session or get_configured_session()
     url = f"{NHL_WEB_BASE}/gamecenter/{game_id}/play-by-play"
-    resp = session.get(url, timeout=30)
-    resp.raise_for_status()
-    return resp.json() or {}
+    try:
+        resp = session.get(url, timeout=30)
+        resp.raise_for_status()
+        return resp.json() or {}
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching game play-by-play for game_id={game_id}, URL={url}: {e}", exc_info=True)
+        raise
 
 
